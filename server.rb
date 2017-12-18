@@ -3,7 +3,7 @@ class Server
 
   def initialize
     @server = TCPServer.new(9292)
-    @counter = 0
+    @number_of_requests = 0
     @request_log = []
   end
 
@@ -11,8 +11,8 @@ class Server
       client = @server.accept
       while line = client.gets and !line.chomp.empty?
           @request_log << line.chomp
-          @counter += 1
       end
+    @number_of_requests += 1
     client.puts header
     client.puts output
     client.close
@@ -20,7 +20,7 @@ class Server
   end
 
   def output
-  response = "<pre>" + "Hello, World!(#{@counter / 9})" + "\r\n" +
+  response = "<pre>" + "Hello, World!(#{@number_of_requests})" + "\r\n" +
   ["Verb: #{@request_log[0].split("/")[0]}",
   "Path: #{@request_log[0].split(" ")[1]}",
   "Protocol: #{@request_log[0].split(" ")[2]}",
