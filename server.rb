@@ -17,6 +17,7 @@ class Server
     end
     @number_of_requests += 1
     @client.puts header
+    # require 'pry'; binding.pry
     path_finder
     @client.close
   end
@@ -30,6 +31,12 @@ class Server
       shut_down
     elsif @request_log[0].split(" ")[1].include?("/word_search")
       word_search
+    elsif (@request_log[0].split(" ")[0] == "POST") && (@request_log[0].split(" ")[1] == "/start_game")
+      start_game
+    elsif (@request_log[0].split(" ")[0] == "POST") && (@request_log[0].split(" ")[1] == "/game")
+      begin_game
+    elsif (@request_log[0].split(" ")[0] == "GET") && (@request_log[0].split(" ")[1] == "/game")
+      guess_again
     else
       @client.puts output
       start
@@ -61,6 +68,26 @@ class Server
     response = Dictionary.new(@request_log[0].split(" ")[1].split("=")[1]).checker
     output = "<html><head></head><body>#{response}<footer>#{footer}</footer></body></html>"
     @client.puts output
+    start
+  end
+
+  def start_game
+    response = "Good luck!"
+    output = "<html><head></head><body>#{response}<footer>#{footer}</footer></body></html>"
+    @client.puts output
+    start
+  end
+
+  def begin_game
+    parse out response to get guess
+    send guess to guessing game class with param and get back response
+      if resonse is wrong call next method
+        if response is right output page
+          start
+  end
+
+  def guess_again
+    response = your guess of (guess) was (too high or low) and youve guessed (this many times)
     start
   end
 
