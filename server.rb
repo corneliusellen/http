@@ -1,4 +1,5 @@
 require 'socket'
+require_relative 'dictionary'
 class Server
 
   def initialize
@@ -9,11 +10,11 @@ class Server
   end
 
   def start
-      @client = @server.accept
-      @request_log = []
-      while line = @client.gets and !line.chomp.empty?
-          @request_log << line.chomp
-      end
+    @client = @server.accept
+    @request_log = []
+    while line = @client.gets and !line.chomp.empty?
+      @request_log << line.chomp
+    end
     @number_of_requests += 1
     @client.puts header
     path_finder
@@ -27,7 +28,7 @@ class Server
       date_time
     elsif @request_log[0].split(" ")[1] == "/shutdown"
       shut_down
-    elsif @request_log[0].split(" ")[1] == "/word_search"
+    elsif @request_log[0].split(" ")[1].include?("/word_search")
       word_search
     else
       @client.puts output
@@ -57,9 +58,10 @@ class Server
   end
 
   def word_search
-    response =
+    response = Dictionary.new(@request_log[0].split(" ")[1].split("=")[1]).checker
     output = "<html><head></head><body>#{response}<footer>#{footer}</footer></body></html>"
     @client.puts output
+    start
   end
 
   def header

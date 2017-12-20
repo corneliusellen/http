@@ -1,15 +1,14 @@
 class Dictionary
 
+  attr_reader :word
+
   def initialize(word)
     @word = word
   end
 
-  def file_opener
-    
-  end
-
   def checker
-    if file_opener.include?(@word)
+    file_name = File.readlines("/usr/share/dict/words")
+    if file_name.include?("#{@word}\n")
       "#{@word} is a known word"
     else
       "SORRY, #{word} is not a known word"
