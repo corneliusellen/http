@@ -6,7 +6,7 @@ class GuessingGame
     @user_guess = user_guess
   end
 
-  def guessing_loop
+  def assess_number
     if @user_guess < @secret_number
       "too low!"
     elsif @user_guess > @secret_number

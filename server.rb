@@ -1,43 +1,40 @@
 require 'socket'
 require_relative 'dictionary'
 require_relative 'guessing_game'
+require_relative 'request'
+require_relative 'response'
+
 class Server
 
   def initialize
     @server = TCPServer.new(9292)
     @number_of_requests = 0
-    @client
-    @request_log
     @secret_number = rand(0..5)
   end
 
   def start
-    @client = @server.accept
-    @request_log = []
-    while line = @client.gets and !line.chomp.empty?
-      @request_log << line.chomp
-    end
+    client = @server.accept
+    request = Request.new(client)
+    request.document_request
     @number_of_requests += 1
-    @user_guess = (@client.read(@request_log[3].split(": ")[1].to_i)).split("\r\n")[3].to_i
-    @client.puts header
-    path_finder
-    @client.close
+    path_finder(client, request)
+    client.close
   end
 
-  def path_finder
-    if @request_log[0].split(" ")[1] == "/hello"
-      hello
-    elsif @request_log[0].split(" ")[1] == "/datetime"
-      date_time
-    elsif @request_log[0].split(" ")[1] == "/shutdown"
-      shut_down
-    elsif @request_log[0].split(" ")[1].include?("/word_search")
-      word_search
-    elsif (@request_log[0].split(" ")[0] == "POST") && (@request_log[0].split(" ")[1] == "/start_game")
-      start_game
-    elsif (@request_log[0].split(" ")[0] == "POST") && (@request_log[0].split(" ")[1] == "/game")
-      guess_again
-    elsif (@request_log[0].split(" ")[0] == "GET") && (@request_log[0].split(" ")[1] == "/game")
+  def path_finder(client, request)
+    if request.path == "/hello"
+      hello(client)
+    elsif request.path == "/datetime"
+      date_time(client)
+    elsif request.path == "/shutdown"
+      shut_down(client)
+    elsif request.path.include?("/word_search")
+      word_search(client, request)
+    elsif (request.verb == "POST") && (request.path == "/start_game")
+      start_game(client)
+    elsif (request.verb == "GET") && (request.path == "/game")
+      guess_again(client, request)
+    elsif (request.verb == "POST") && (request.path == "/game")
       guess_again
     else
       @client.puts output
@@ -45,76 +42,52 @@ class Server
     end
   end
 
-  def hello
-    response = "Hello, World!(#{@number_of_requests})"
-    output = "<html><head></head><body>#{response}<footer>#{footer}</footer></body></html>"
-    @client.puts output
+  def hello(client)
+    body = "Hello, World!(#{@number_of_requests})"
+    response = Response.new(client, body)
+    response.send_response
     start
   end
 
-  def date_time
+  def date_time(client)
     t = Time.new
-    response = "#{t.strftime("%I")}:#{t.strftime("%M")}#{t.strftime("%p")} on #{t.strftime("%A")}, #{t.strftime("%B")} #{t.strftime("%d")}, #{t.strftime("%Y")}"
-    output = "<html><head></head><body>#{response}<footer>#{footer}</footer></body></html>"
-    @client.puts output
+    body = "#{t.strftime("%I")}:#{t.strftime("%M")}#{t.strftime("%p")} on #{t.strftime("%A")}, #{t.strftime("%B")} #{t.strftime("%d")}, #{t.strftime("%Y")}"
+    response = Response.new(client, body)
+    response.send_response
     start
   end
 
-  def shut_down
-    response = "Total requests: #{@number_of_requests}"
-    output = "<html><head></head><body>#{response}<footer>#{footer}</footer></body></html>"
-    @client.puts output
+  def shut_down(client)
+    body = "Total requests: #{@number_of_requests}"
+    response = Response.new(client, body)
+    response.send_response
   end
 
-  def word_search
-    response = Dictionary.new(@request_log[0].split(" ")[1].split("=")[1]).checker
-    output = "<html><head></head><body>#{response}<footer>#{footer}</footer></body></html>"
-    @client.puts output
+  def word_search(client, request)
+    body = Dictionary.new(request.word).checker
+    response = Response.new(client, body)
+    response.send_response
     start
   end
 
-  def start_game
-    response = "Good luck!"
-    output = "<html><head></head><body>#{response}<footer>#{footer}</footer></body></html>"
-    @client.puts output
+  def start_game(client)
+    body = "Good luck!"
+    response = Response.new(client, body)
+    response.send_response
     start
   end
 
-
-  def begin_game
-    guess_checker = GuessingGame.new(@user_guess, @secret_number)
-    guess_checker.guessing_loop
-  end
-
-  def guess_again
-    response = "Your guess was #{@user_guess} and it was #{begin_game}"
-    output = "<html><head></head><body>#{response}<footer>#{footer}</footer></body></html>"
-    @client.puts output
-    start
-  end
-
-  def header
-    ["http/1.1 200 ok",
-    "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
-    "server: ruby",
-    "content-type: text/html; charset=iso-8859-1",
-    "content-length: #{output.length}\r\n\r\n"].join("\r\n")
-  end
-
-  def output
-    "<html><head></head><body><footer>#{footer}</footer></body></html>"
-  end
-
-  def footer
-    "<pre>" + "\r\n" +
-    ["Verb: #{@request_log[0].split("/")[0]}",
-    "Path: #{@request_log[0].split(" ")[1]}",
-    "Protocol: #{@request_log[0].split(" ")[2]}",
-    "Host: #{@request_log[1].split(" ")[1]}",
-    "Port: #{@request_log[1].split(":")[2]}",
-    "Origin: #{@request_log[1].split(" ")[1]}",
-    "Accept: #{@request_log[6].split(" ")[1]}"].join("\r\n") +
-    "\r\n" + "</pre>"
-  end
+  # def begin_game(client, request)
+  #   guess = request.user_guess
+  #   guessing_game = GuessingGame.new(guess, @secret_number)
+  #   response = guessing_game.assess_number
+  # end
+  #
+  # def guess_again
+  #   response = "Your guess was #{@user_guess} and it was #{begin_game}"
+  #   output = "<html><head></head><body>#{response}<footer>#{footer}</footer></body></html>"
+  #   @client.puts output
+  #   start
+  # end
 
 end
