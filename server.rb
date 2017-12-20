@@ -1,5 +1,6 @@
 require 'socket'
 require_relative 'dictionary'
+require_relative 'guessing_game'
 class Server
 
   def initialize
@@ -7,6 +8,7 @@ class Server
     @number_of_requests = 0
     @client
     @request_log
+    @secret_number = rand(0..5)
   end
 
   def start
@@ -16,8 +18,8 @@ class Server
       @request_log << line.chomp
     end
     @number_of_requests += 1
+    @user_guess = (@client.read(@request_log[3].split(": ")[1].to_i)).split("\r\n")[3].to_i
     @client.puts header
-    # require 'pry'; binding.pry
     path_finder
     @client.close
   end
@@ -34,7 +36,7 @@ class Server
     elsif (@request_log[0].split(" ")[0] == "POST") && (@request_log[0].split(" ")[1] == "/start_game")
       start_game
     elsif (@request_log[0].split(" ")[0] == "POST") && (@request_log[0].split(" ")[1] == "/game")
-      begin_game
+      guess_again
     elsif (@request_log[0].split(" ")[0] == "GET") && (@request_log[0].split(" ")[1] == "/game")
       guess_again
     else
@@ -78,16 +80,16 @@ class Server
     start
   end
 
+
   def begin_game
-    parse out response to get guess
-    send guess to guessing game class with param and get back response
-      if resonse is wrong call next method
-        if response is right output page
-          start
+    guess_checker = GuessingGame.new(@user_guess, @secret_number)
+    guess_checker.guessing_loop
   end
 
   def guess_again
-    response = your guess of (guess) was (too high or low) and youve guessed (this many times)
+    response = "Your guess was #{@user_guess} and it was #{begin_game}"
+    output = "<html><head></head><body>#{response}<footer>#{footer}</footer></body></html>"
+    @client.puts output
     start
   end
 

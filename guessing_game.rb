@@ -1,23 +1,21 @@
-class Guess
+class GuessingGame
 
-  def initialize
-    @secret_number = rand(0..5)
+  def initialize(user_guess, secret_number)
+    @secret_number = secret_number
     @guesses = 0
+    @user_guess = user_guess
   end
 
   def guessing_loop
-    user_guess = gets.chomp.to_i
-    until user_guess == x
-      guesses = guesses + 1
-      if
-        user_guess < x
-        puts "Guess higher!"
-      else
-          puts "Guess lower!"
-      end
-      user_guess = gets.chomp.to_i
+    if @user_guess < @secret_number
+      "too low!"
+    elsif @user_guess > @secret_number
+      "too high!"
+    elsif @user_guess == @secret_number
+      "correct!!!"
+    else
+      "shit"
     end
-    puts "You guessed the right number #{x} in #{guesses} guesses!"
   end
 
-end 
+end
