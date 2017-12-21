@@ -9,8 +9,12 @@ class Server
   def initialize
     @server = TCPServer.new(9292)
     @number_of_requests = 0
+
     @secret_number = rand(0..5)
+    @game_started = false
     @number_of_guesses = 0
+    @user_guess = nil
+    @high_or_low = nil
   end
 
   def start
@@ -34,9 +38,9 @@ class Server
     elsif (request.verb == "POST") && (request.path == "/start_game")
       start_game(client)
     elsif (request.verb == "GET") && (request.path == "/game")
-      guess_status(client, request)
+      game_status(client, request)
     elsif (request.verb == "POST") && (request.path == "/game")
-      guess_status(client, request)
+      make_a_guess(client, request)
     else
       start
     end
@@ -71,24 +75,29 @@ class Server
   end
 
   def start_game(client)
+    @game_started = true
     body = "Good luck!"
     response = Response.new(client, body)
     response.send_response
     start
   end
 
-  def guess_status(client, request)
-    guess = request.user_guess
-    body = "Your last guess was #{guess} and it #{make_a_guess(guess)}. You have made #{@number_of_guesses} guesses."
+  def game_status(client, request)
+    body = "Your last guess was #{@user_guess} and it #{@high_or_low}. You have made #{@number_of_guesses} guesses."
     response = Response.new(client, body)
     response.send_response
     start
   end
 
-  def make_a_guess(guess)
+  def make_a_guess(client, request)
     @number_of_guesses += 1
-    guessing_game = GuessingGame.new(guess, @secret_number)
-    too_high_or_low_or_correct = guessing_game.assess_number
+    @user_guess = request.user_guess
+    guessing_game = GuessingGame.new(@user_guess, @secret_number)
+    @high_or_low = guessing_game.assess_number
+    body = nil
+    response = Response.new(client, body)
+    response.send_redirect
+    start
   end
 
 end
