@@ -1,6 +1,6 @@
 require_relative 'request'
 
-class Response < Request
+class Response #< Request
 
   def initialize(client, body)
     @client = client
