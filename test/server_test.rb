@@ -15,8 +15,13 @@ class ServerTest < Minitest::Test
     assert_equal expected, response.body
   end
 
-  def test_returns_202_when_request_hello
+  def test_returns_200_when_get_hello
     response = Faraday.get 'http://127.0.0.1:9292/hello'
+    assert_equal 200, response.status
+  end
+
+  def test_returns_200_when_get_datetime
+    response = Faraday.get 'http://127.0.0.1:9292/datetime'
     assert_equal 200, response.status
   end
 
@@ -44,9 +49,9 @@ class ServerTest < Minitest::Test
     assert_equal expected, response.body
   end
 
-  def test_returns_404_when_post_to_datetime
-    response = Faraday.post 'http://127.0.0.1:9292/date_time'
-    assert_equal 404, response.status
+  def test_returns_200_when_get_datetime
+    response = Faraday.get 'http://127.0.0.1:9292/datetime'
+    assert_equal 200, response.status
   end
 
   def test_shut_down_returns_expected_body
@@ -71,8 +76,15 @@ class ServerTest < Minitest::Test
     skip
     response = Faraday.post 'http://127.0.0.1:9292/start_game'
     assert_equal 302, response.status
+    @game_started = true
     response_2 = Faraday.post 'http://127.0.0.1:9292/start_game'
     assert_equal 403, response_2.status
+  end
+
+
+  def test_returns_500_when_get_force_error
+    response = Faraday.get 'http://127.0.0.1:9292/force_error'
+    assert_equal 500, response.status
   end
 
 end
