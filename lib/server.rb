@@ -13,6 +13,10 @@ class Server
 
   def start
     client = @server.accept
+    receive_request(client)
+  end
+
+  def receive_request(client)
     request = Request.new(client)
     request.document_request
     @number_of_requests += 1
@@ -32,7 +36,7 @@ class Server
 
   def path_finder_get(client, request)
     if request.path == "/"
-      start_server(client, request)
+      main(client, request)
     elsif request.path == "/hello"
       hello(client, request)
     elsif request.path == "/datetime"
@@ -46,89 +50,93 @@ class Server
     elsif request.path == "/game"
       game_status(client, request)
     else
-      moved(client, request)
+      respond_moved(client, request)
     end
   end
 
   def path_finder_post(client, request)
     if request.path == "/start_game"
-      redirect_start_game(client, request)
+      post_start_game(client, request)
     elsif request.path == "/game"
       make_a_guess(client, request)
     else
-      moved(client, request)
+      respond_moved(client, request)
     end
   end
 
-  def start_server(client, request)
-    response = Response.new(client, request)
+  def respond(client, request, body)
+    response = Response.new(client, request, body)
     response.send_response
+  end
+
+  def main(client, request)
+    respond(client, request, body = nil)
     start
   end
 
   def hello(client, request)
     body = "Hello, World!(#{@number_of_requests})"
-    response = Response.new(client, request, body)
-    response.send_response
+    respond(client, request, body)
     start
   end
 
   def date_time(client, request)
     t = Time.new
     body = "#{t.strftime("%I")}:#{t.strftime("%M")}#{t.strftime("%p")} on #{t.strftime("%A")}, #{t.strftime("%B")} #{t.strftime("%d")}, #{t.strftime("%Y")}"
-    response = Response.new(client, request, body)
-    response.send_response
+    respond(client, request, body)
     start
   end
 
   def shut_down(client, request)
     body = "Total requests: #{@number_of_requests}"
-    response = Response.new(client, request, body)
-    response.send_response
+    respond(client, request, body)
   end
 
   def word_search(client, request)
     body = Dictionary.new(request.word).checker
-    response = Response.new(client, request, body)
-    response.send_response
+    respond(client, request, body)
     start
   end
 
   def start_game(client, request)
     @game = Game.new
     body = "Good luck!"
-    response = Response.new(client, request, body)
-    response.send_response
-    start
-  end
-
-  def redirect_start_game(client, request)
-    response = Response.new(client, request)
-    response.send_redirect_start_game
+    respond(client, request, body)
     start
   end
 
   def game_status(client, request)
     body = "Your last guess was #{@game.user_guess} and it #{@game.high_or_low}. You have made #{@game.number_of_guesses} guesses."
-    response = Response.new(client, request, body)
-    response.send_response
+    respond(client, request, body)
     start
   end
 
   def make_a_guess(client, request)
-    response = Response.new(client, request)
     @game.guess_checker(request)
-    response.send_redirect_game
+    link = "http://127.0.0.1:9292/game"
+    respond_redirect(client, request, link)
     start
   end
 
-  def forbidden(client, request)
+  def post_start_game(client, request)
+    link = "http://127.0.0.1:9292/start_game"
+    respond_redirect(client, request, link)
+    start
+  end
+
+  def respond_redirect(client, request, link)
+    response = Response.new(client, request)
+    response.send_redirect(link)
+    start
+  end
+
+  def respond_forbidden(client, request)
     response = Response.new(client, request)
     response.send_forbidden
     start
   end
 
-  def moved(client, request)
+  def respond_moved(client, request)
     response = Response.new(client, request)
     response.send_moved
     start

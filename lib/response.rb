@@ -35,31 +35,17 @@ class Response
     @client.puts output
   end
 
-  def header_redirect_start_game
+  def header_redirect(link)
     ["http/1.1 302 Moved Permanently",
-    "Location: http://127.0.0.1:9292/start_game",
+    "Location: #{link}",
     "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
     "server: ruby",
     "content-type: text/html; charset=iso-8859-1",
     "content-length: #{output.length}\r\n\r\n"].join("\r\n")
   end
 
-  def send_redirect_start_game
-    @client.puts header_redirect_start_game
-    @client.puts output
-  end
-
-  def header_redirect_game
-    ["http/1.1 302 Moved Permanently",
-    "Location: http://127.0.0.1:9292/game",
-    "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
-    "server: ruby",
-    "content-type: text/html; charset=iso-8859-1",
-    "content-length: #{output.length}\r\n\r\n"].join("\r\n")
-  end
-
-  def send_redirect_game
-    @client.puts header_redirect_game
+  def send_redirect(link)
+    @client.puts header_redirect(link)
     @client.puts output
   end
 
