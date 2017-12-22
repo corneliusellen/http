@@ -1,8 +1,9 @@
 class Game
 
-  attr_reader :number_of_guesses,
-              :user_guess,
-              :high_or_low
+  attr_accessor :number_of_guesses,
+                :user_guess,
+                :high_or_low,
+                :secret_number
 
   def initialize
     @secret_number = rand(0..5)

@@ -15,6 +15,11 @@ class ServerTest < Minitest::Test
     assert_equal expected, response.body
   end
 
+  def test_returns_202_when_request_hello
+    response = Faraday.get 'http://127.0.0.1:9292/hello'
+    assert_equal 200, response.status
+  end
+
   def test_returns_404_when_post_to_start_server
     response = Faraday.post 'http://127.0.0.1:9292'
     assert_equal 404, response.status
@@ -60,6 +65,14 @@ class ServerTest < Minitest::Test
   def test_returns_404_when_post_to_word_search
     response = Faraday.post 'http://127.0.0.1:9292/word_search?word=girl'
     assert_equal 404, response.status
+  end
+
+  def test_returns_403_when_post_to_start_game_and_game_started
+    skip
+    response = Faraday.post 'http://127.0.0.1:9292/start_game'
+    assert_equal 302, response.status
+    response_2 = Faraday.post 'http://127.0.0.1:9292/start_game'
+    assert_equal 403, response_2.status
   end
 
 end

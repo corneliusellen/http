@@ -9,6 +9,7 @@ class Server
   def initialize
     @server = TCPServer.new(9292)
     @number_of_requests = 0
+    @game_started = false
   end
 
   def start
@@ -49,6 +50,8 @@ class Server
       start_game(client, request)
     elsif request.path == "/game"
       game_status(client, request)
+    elsif request.path == "/force_error"
+      respond_internal_error(client, request)
     else
       respond_moved(client, request)
     end
@@ -99,6 +102,7 @@ class Server
   end
 
   def start_game(client, request)
+    @game_started = true
     @game = Game.new
     body = "Good luck!"
     respond(client, request, body)
@@ -119,9 +123,12 @@ class Server
   end
 
   def post_start_game(client, request)
-    link = "http://127.0.0.1:9292/start_game"
-    respond_redirect(client, request, link)
-    start
+    if @game_started == true
+      respond_forbidden(client, request)
+    else
+      link = "http://127.0.0.1:9292/start_game"
+      respond_redirect(client, request, link)
+    end
   end
 
   def respond_redirect(client, request, link)
@@ -139,6 +146,12 @@ class Server
   def respond_moved(client, request)
     response = Response.new(client, request)
     response.send_moved
+    start
+  end
+
+  def respond_internal_error(client, request)
+    response = Response.new(client, request)
+    response.send_internal_error
     start
   end
 
