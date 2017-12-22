@@ -1,6 +1,6 @@
 require 'socket'
 require_relative 'dictionary'
-require_relative 'guessing_game'
+require_relative 'game'
 require_relative 'request'
 require_relative 'response'
 
@@ -9,12 +9,6 @@ class Server
   def initialize
     @server = TCPServer.new(9292)
     @number_of_requests = 0
-
-    @secret_number = rand(0..5)
-    @game_started = false
-    @number_of_guesses = 0
-    @user_guess = nil
-    @high_or_low = nil
   end
 
   def start
@@ -58,11 +52,7 @@ class Server
 
   def path_finder_post(client, request)
     if request.path == "/start_game"
-      if @game_started == false
-        redirect_start_game(client, request)
-      else
-        forbidden(client, request)
-      end
+      redirect_start_game(client, request)
     elsif request.path == "/game"
       make_a_guess(client, request)
     else
@@ -105,7 +95,7 @@ class Server
   end
 
   def start_game(client, request)
-    @game_started = true
+    @game = Game.new
     body = "Good luck!"
     response = Response.new(client, request, body)
     response.send_response
@@ -119,19 +109,15 @@ class Server
   end
 
   def game_status(client, request)
-    body = "Your last guess was #{@user_guess} and it #{@high_or_low}. You have made #{@number_of_guesses} guesses."
+    body = "Your last guess was #{@game.user_guess} and it #{@game.high_or_low}. You have made #{@game.number_of_guesses} guesses."
     response = Response.new(client, request, body)
     response.send_response
     start
   end
 
   def make_a_guess(client, request)
-    @number_of_guesses += 1
-    @user_guess = request.user_guess
-    guessing_game = GuessingGame.new(@user_guess, @secret_number)
-    @high_or_low = guessing_game.assess_number
-    body = nil
-    response = Response.new(client, request, body)
+    response = Response.new(client, request)
+    @game.guess_checker(request)
     response.send_redirect_game
     start
   end
